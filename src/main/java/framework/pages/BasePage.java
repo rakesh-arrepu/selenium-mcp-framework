@@ -122,6 +122,252 @@ public class BasePage {
     }
 
     /**
+     * Waits for an element to become clickable
+     * Uses default timeout from configuration
+     *
+     * @param elementName Name of the element
+     * @throws IOException if element doesn't become clickable within timeout
+     */
+    protected void waitForElementClickable(String elementName) throws IOException {
+        waitForElementClickable(elementName, DEFAULT_WAIT_TIME);
+    }
+
+    /**
+     * Waits for an element to become clickable with custom timeout
+     * An element is considered clickable if it's visible and enabled
+     *
+     * @param elementName Name of the element
+     * @param timeoutMs Timeout in milliseconds
+     * @throws IOException if element doesn't become clickable within timeout
+     */
+    protected void waitForElementClickable(String elementName, long timeoutMs) throws IOException {
+        System.out.println("[BasePage] Waiting for element to be clickable: " + elementName + " (timeout: " + timeoutMs + "ms)");
+
+        long startTime = System.currentTimeMillis();
+        long elapsedTime = 0;
+        IOException lastException = null;
+
+        while (elapsedTime < timeoutMs) {
+            try {
+                SelfHealingElement elem = element(elementName);
+                // Check if element is visible and enabled
+                if (elem.isVisible() && elem.isEnabled()) {
+                    System.out.println("[BasePage] ✓ Element clickable: " + elementName);
+                    return;
+                }
+            } catch (Exception e) {
+                lastException = new IOException("Element not clickable", e);
+            }
+
+            try {
+                Thread.sleep(500); // Wait 500ms before retry
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Wait interrupted", ie);
+            }
+
+            elapsedTime = System.currentTimeMillis() - startTime;
+        }
+
+        throw new IOException("[BasePage] Timeout waiting for element to be clickable: " + elementName +
+                " (waited " + timeoutMs + "ms)", lastException);
+    }
+
+    /**
+     * Waits for an element to disappear from the page
+     * Uses default timeout
+     *
+     * @param elementName Name of the element
+     * @throws IOException if element doesn't disappear within timeout
+     */
+    protected void waitForElementToDisappear(String elementName) throws IOException {
+        waitForElementToDisappear(elementName, DEFAULT_WAIT_TIME);
+    }
+
+    /**
+     * Waits for an element to disappear from the page with custom timeout
+     *
+     * @param elementName Name of the element
+     * @param timeoutMs Timeout in milliseconds
+     * @throws IOException if element doesn't disappear within timeout
+     */
+    protected void waitForElementToDisappear(String elementName, long timeoutMs) throws IOException {
+        System.out.println("[BasePage] Waiting for element to disappear: " + elementName + " (timeout: " + timeoutMs + "ms)");
+
+        long startTime = System.currentTimeMillis();
+        long elapsedTime = 0;
+
+        while (elapsedTime < timeoutMs) {
+            try {
+                SelfHealingElement elem = element(elementName);
+                elem.getText(); // If this succeeds, element is still visible
+
+                // Element found, wait and retry
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Wait interrupted", ie);
+                }
+
+            } catch (IOException e) {
+                // Element not found - it has disappeared
+                System.out.println("[BasePage] ✓ Element disappeared: " + elementName);
+                return;
+            }
+
+            elapsedTime = System.currentTimeMillis() - startTime;
+        }
+
+        throw new IOException("[BasePage] Timeout waiting for element to disappear: " + elementName +
+                " (waited " + timeoutMs + "ms)");
+    }
+
+    /**
+     * Waits for specific text to be present in an element
+     * Uses default timeout
+     *
+     * @param elementName Name of the element
+     * @param expectedText Text to wait for
+     * @throws IOException if text doesn't appear within timeout
+     */
+    protected void waitForTextToBePresent(String elementName, String expectedText) throws IOException {
+        waitForTextToBePresent(elementName, expectedText, DEFAULT_WAIT_TIME);
+    }
+
+    /**
+     * Waits for specific text to be present in an element with custom timeout
+     *
+     * @param elementName Name of the element
+     * @param expectedText Text to wait for
+     * @param timeoutMs Timeout in milliseconds
+     * @throws IOException if text doesn't appear within timeout
+     */
+    protected void waitForTextToBePresent(String elementName, String expectedText, long timeoutMs) throws IOException {
+        System.out.println("[BasePage] Waiting for text '" + expectedText + "' in element: " + elementName + " (timeout: " + timeoutMs + "ms)");
+
+        long startTime = System.currentTimeMillis();
+        long elapsedTime = 0;
+        String lastText = "";
+
+        while (elapsedTime < timeoutMs) {
+            try {
+                SelfHealingElement elem = element(elementName);
+                String actualText = elem.getText();
+                lastText = actualText;
+
+                if (actualText != null && actualText.contains(expectedText)) {
+                    System.out.println("[BasePage] ✓ Text found in element: " + elementName);
+                    return;
+                }
+
+            } catch (IOException e) {
+                // Element not found yet, continue waiting
+            }
+
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Wait interrupted", ie);
+            }
+
+            elapsedTime = System.currentTimeMillis() - startTime;
+        }
+
+        throw new IOException("[BasePage] Timeout waiting for text '" + expectedText +
+                "' in element: " + elementName + ". Last text: '" + lastText +
+                "' (waited " + timeoutMs + "ms)");
+    }
+
+    /**
+     * Waits for an element's attribute to have a specific value
+     * Uses default timeout
+     *
+     * @param elementName Name of the element
+     * @param attributeName Attribute name to check
+     * @param expectedValue Expected attribute value
+     * @throws IOException if attribute value doesn't match within timeout
+     */
+    protected void waitForAttributeValue(String elementName, String attributeName, String expectedValue) throws IOException {
+        waitForAttributeValue(elementName, attributeName, expectedValue, DEFAULT_WAIT_TIME);
+    }
+
+    /**
+     * Waits for an element's attribute to have a specific value with custom timeout
+     *
+     * @param elementName Name of the element
+     * @param attributeName Attribute name to check
+     * @param expectedValue Expected attribute value
+     * @param timeoutMs Timeout in milliseconds
+     * @throws IOException if attribute value doesn't match within timeout
+     */
+    protected void waitForAttributeValue(String elementName, String attributeName, String expectedValue, long timeoutMs) throws IOException {
+        System.out.println("[BasePage] Waiting for attribute '" + attributeName + "' = '" + expectedValue +
+                "' in element: " + elementName + " (timeout: " + timeoutMs + "ms)");
+
+        long startTime = System.currentTimeMillis();
+        long elapsedTime = 0;
+        String lastValue = "";
+
+        while (elapsedTime < timeoutMs) {
+            try {
+                SelfHealingElement elem = element(elementName);
+                String actualValue = elem.getAttribute(attributeName);
+                lastValue = actualValue;
+
+                if (actualValue != null && actualValue.equals(expectedValue)) {
+                    System.out.println("[BasePage] ✓ Attribute value matched in element: " + elementName);
+                    return;
+                }
+
+            } catch (Exception e) {
+                // Element not found or attribute not available yet
+            }
+
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Wait interrupted", ie);
+            }
+
+            elapsedTime = System.currentTimeMillis() - startTime;
+        }
+
+        throw new IOException("[BasePage] Timeout waiting for attribute '" + attributeName +
+                "' = '" + expectedValue + "' in element: " + elementName +
+                ". Last value: '" + lastValue + "' (waited " + timeoutMs + "ms)");
+    }
+
+    /**
+     * Waits for page to load completely
+     * Uses a simple sleep-based approach (can be enhanced with JS readyState check)
+     *
+     * @param timeoutMs Maximum time to wait in milliseconds
+     */
+    protected void waitForPageLoad(long timeoutMs) {
+        System.out.println("[BasePage] Waiting for page to load (timeout: " + timeoutMs + "ms)");
+
+        try {
+            // Simple approach: wait for a fixed duration
+            // In a real implementation, this could check document.readyState via JavaScript
+            Thread.sleep(Math.min(timeoutMs, 3000)); // Wait max 3 seconds
+            System.out.println("[BasePage] ✓ Page load wait completed");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("[BasePage] Page load wait interrupted");
+        }
+    }
+
+    /**
+     * Waits for page to load with default timeout
+     */
+    protected void waitForPageLoad() {
+        waitForPageLoad(5000); // Default 5 seconds
+    }
+
+    /**
      * Asserts that an element is visible on the page
      *
      * @param elementName Name of the element
