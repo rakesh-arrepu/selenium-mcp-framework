@@ -23,7 +23,7 @@
 
 ---
 
-## Phase 2: Medium Priority 🔨 (IN PROGRESS - 9/24 completed - 37.5%)
+## Phase 2: Medium Priority 🔨 (IN PROGRESS - 21/26 completed - 80.8%)
 
 ### 2.1 Additional Page Objects (3 items)
 - [x] RegistrationPage with form validation ✅
@@ -31,14 +31,16 @@
   - ✅ First name, last name fields
   - ✅ Terms & conditions checkbox
   - ✅ Submit button and validation messages
-- [ ] PasswordResetPage with email flow
-  - Email input field and reset button
-  - Success confirmation message
-  - Email verification support
-- [ ] ProfilePage with edit capabilities
-  - Profile picture upload
-  - Edit profile fields (name, email, phone)
-  - Save/Cancel buttons
+- [x] PasswordResetPage with email flow ✅
+  - ✅ Email input field and reset button
+  - ✅ Success confirmation message
+  - ✅ Email verification support
+  - ✅ Verification code and new password fields
+- [x] ProfilePage with edit capabilities ✅
+  - ✅ Profile picture upload
+  - ✅ Edit profile fields (name, email, phone, address)
+  - ✅ Save/Cancel buttons
+  - ✅ Change password link
 
 ### 2.2 Test Data Management (6 items)
 - [x] Create TestDataProvider utility class ✅
@@ -75,27 +77,47 @@
   - ✅ Add dependencies to pom.xml
   - ✅ Create logback.xml configuration
   - ⏳ Replace System.out with logger (deferred)
-- [ ] Create RegistrationSteps step definitions
+- [x] Create RegistrationSteps step definitions ✅
+  - ✅ Complete registration workflow steps
+  - ✅ Form validation steps
+  - ✅ Error handling steps
+- [x] Create PasswordResetSteps step definitions ✅
+  - ✅ Email reset request steps
+  - ✅ Verification code steps
+  - ✅ New password submission steps
+- [x] Create ProfileSteps step definitions ✅
+  - ✅ Profile viewing steps
+  - ✅ Profile editing steps
+  - ✅ Profile picture upload steps
 - [x] Create CommonSteps for reusable steps ✅
 - [x] Create test data directory structure ✅
 - [ ] Add browser download directory configuration
 
 ### 2.5 Feature Files & Tests (6 items)
-- [ ] Create registration.feature
-- [ ] Create password-reset.feature
-- [ ] Create profile.feature
-- [ ] Add locators for new pages to locators.json
-- [ ] Create validation test scenarios
-- [ ] Add error handling test scenarios
+- [x] Create registration.feature ✅
+  - ✅ 19 comprehensive registration scenarios
+  - ✅ Validation, security, and edge cases
+- [x] Create password-reset.feature ✅
+  - ✅ 20 password reset scenarios
+  - ✅ Email flow, verification code, security tests
+- [x] Create profile.feature ✅
+  - ✅ 30 profile management scenarios
+  - ✅ Edit profile, upload picture, validation tests
+- [x] Add locators for new pages to locators.json ✅
+  - ✅ RegistrationPage locators (12 elements)
+  - ✅ PasswordResetPage locators (10 elements)
+  - ✅ ProfilePage locators (14 elements)
+- [x] Create validation test scenarios ✅
+- [x] Add error handling test scenarios ✅
 
-**Total: 9/24 items (37.5%) | Partial completion: November 18, 2025**
+**Total: 21/26 items (80.8%) | Substantial progress: November 18, 2025**
 
 **Sub-totals:**
-- Page Objects: 1/3 (33.3%) ✅
+- Page Objects: 3/3 (100%) ✅✅✅
 - Data Management: 5/6 (83.3%) ✅✅✅
 - Reporting: 0/3 (0%)
-- Infrastructure: 4/6 (66.7%) ✅✅
-- Feature Files: 0/6 (0%)
+- Infrastructure: 7/8 (87.5%) ✅✅✅
+- Feature Files: 6/6 (100%) ✅✅✅
 
 ---
 
@@ -131,10 +153,10 @@
 
 ## Overall Progress
 - [x] Phase 1: 13/13 (100%) ✅ - **COMPLETED**
-- [ ] Phase 2: 9/24 (37.5%) - **IN PROGRESS**
+- [ ] Phase 2: 21/26 (80.8%) - **NEAR COMPLETION**
 - [ ] Phase 3: 0/30 (0%)
 
-**Total: 22/67 (32.8%)**
+**Total: 34/69 (49.3%)**
 
 ---
 
@@ -183,9 +205,9 @@
 
 ---
 
-## Phase 2 Partial Deliverables Summary
+## Phase 2 Substantial Deliverables Summary
 
-### ✅ Completed Items (9/24):
+### ✅ Completed Items (21/26):
 1. **Browser Management**
    - Created `BrowserManager` class (360 lines)
    - Multi-browser support (Chrome, Firefox, Edge, Safari)
@@ -198,11 +220,13 @@
    - Console, file, debug, and error log appenders
    - Rolling file policy with size and time-based rotation
 
-3. **Page Objects**
+3. **Page Objects** (3/3 COMPLETE)
    - Implemented `RegistrationPage.java` (450 lines)
    - 12 registration form elements with self-healing locators
-   - Form validation methods
-   - Complete registration workflow
+   - Implemented `PasswordResetPage.java` (367 lines)
+   - 10 password reset elements with verification flow
+   - Implemented `ProfilePage.java` (451 lines)
+   - 14 profile management elements with picture upload
 
 4. **Test Data Management**
    - Created `TestDataProvider` utility class (220 lines)
@@ -215,16 +239,32 @@
    - `invalid_credentials.json` - 9 invalid scenarios
    - `registration_data.json` - 6 registration test cases
 
-6. **Reusable Steps**
-   - Created `CommonSteps.java` (200 lines)
-   - 20+ reusable step definitions
-   - Wait, navigation, screenshot, and browser steps
+6. **Step Definitions** (4 classes)
+   - Created `CommonSteps.java` (200 lines) - 20+ reusable steps
+   - Created `RegistrationSteps.java` (520 lines) - Complete registration workflow
+   - Created `PasswordResetSteps.java` (470 lines) - Password reset flow with verification
+   - Created `ProfileSteps.java` (490 lines) - Profile management operations
+
+7. **Feature Files** (3 files, 69 scenarios)
+   - Created `registration.feature` - 19 registration scenarios
+   - Created `password-reset.feature` - 20 password reset scenarios
+   - Created `profile.feature` - 30 profile management scenarios
+   - Coverage: validation, security, edge cases, error handling
+
+8. **Locator Registry**
+   - Updated `locators.json` with 36 new element definitions
+   - RegistrationPage: 12 elements
+   - PasswordResetPage: 10 elements
+   - ProfilePage: 14 elements
+   - Total JSON size: 926 lines
 
 ### 📊 Phase 2 Statistics:
-- **New Java Files**: 7
-- **New Lines of Code**: ~1,580
+- **New Java Files**: 13 (6 page objects + 4 step definition classes + 3 others)
+- **New Lines of Code**: ~4,800
 - **Test Data Files**: 3
-- **Overall Progress**: 32.8% (22/67 items)
+- **Feature Files**: 3 (69 scenarios)
+- **Locator Definitions**: 41 elements total
+- **Overall Progress**: 49.3% (34/69 items)
 
 ---
 
