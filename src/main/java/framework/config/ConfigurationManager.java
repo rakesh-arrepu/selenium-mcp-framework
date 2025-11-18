@@ -583,6 +583,34 @@ public class ConfigurationManager {
     }
 
     /**
+     * Gets browser download directory
+     * This directory will be used for file downloads in tests
+     *
+     * @return Download directory path
+     */
+    public String getBrowserDownloadDir() {
+        return getProperty("browser.download.dir", "target/downloads");
+    }
+
+    /**
+     * Gets whether to wait for download completion
+     *
+     * @return True if should wait for downloads to complete
+     */
+    public boolean isWaitForDownloadCompletion() {
+        return getBooleanProperty("browser.download.wait.completion", true);
+    }
+
+    /**
+     * Gets download timeout in milliseconds
+     *
+     * @return Download timeout in milliseconds
+     */
+    public long getDownloadTimeout() {
+        return getLongProperty("browser.download.timeout", 30000L);
+    }
+
+    /**
      * Prints all configuration values (for debugging)
      */
     public void printConfiguration() {

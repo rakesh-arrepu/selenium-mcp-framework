@@ -45,7 +45,9 @@ import org.junit.runner.RunWith;
                 "html:target/cucumber-reports/cucumber.html",     // HTML report
                 "json:target/cucumber-reports/cucumber.json",     // JSON report (for advanced reporting)
                 "junit:target/cucumber-reports/cucumber.xml",     // JUnit XML report (for CI/CD)
-                "rerun:target/cucumber-reports/rerun.txt"        // Rerun failed scenarios
+                "rerun:target/cucumber-reports/rerun.txt",        // Rerun failed scenarios
+                "framework.reporting.ExtentTestListener",          // Extent Reports integration
+                "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm" // Allure Reports integration
         },
 
         // Display more detailed output
