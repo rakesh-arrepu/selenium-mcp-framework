@@ -1,5 +1,6 @@
 package framework.pages;
 
+import framework.config.ConfigurationManager;
 import framework.healing.HealingMetrics;
 import framework.locators.LocatorRegistry;
 import framework.locators.LocatorRegistry.LocatorStrategy;
@@ -39,8 +40,8 @@ public class LoginPage extends BasePage {
     public static final String ERROR_MESSAGE = "errorMessage";
     public static final String SUCCESS_MESSAGE = "successMessage";
 
-    // Default login page URL (can be configured)
-    private static final String LOGIN_PAGE_URL = "https://example.com/login";
+    // Configuration manager for dynamic URL
+    private final ConfigurationManager config = ConfigurationManager.getInstance();
 
     /**
      * Creates a new LoginPage instance
@@ -112,7 +113,8 @@ public class LoginPage extends BasePage {
      */
     public void navigateToLoginPage() throws IOException {
         log("Navigating to login page");
-        navigateTo(LOGIN_PAGE_URL);
+        String loginUrl = config.getBaseUrl() + "/login";
+        navigateTo(loginUrl);
     }
 
     /**

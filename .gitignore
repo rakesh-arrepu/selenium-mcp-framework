@@ -1,0 +1,50 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# Screenshots (exclude actual images, keep directories)
+screenshots/**/*.png
+screenshots/**/*.jpg
+screenshots/**/*.jpeg
+!screenshots/.gitkeep
+!screenshots/baseline/.gitkeep
+!screenshots/current/.gitkeep
+
+# Test Reports
+test-output/
+reports/
+allure-results/
+extent-reports/
+cucumber-reports/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test data
+*.tmp
+*.temp

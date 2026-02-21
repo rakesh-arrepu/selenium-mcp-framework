@@ -1,0 +1,60 @@
+[
+  {
+    "firstName": "Alice",
+    "lastName": "Anderson",
+    "email": "alice.anderson@example.com",
+    "password": "AlicePass123!",
+    "phone": "555-111-2222",
+    "termsAccepted": true,
+    "expectedResult": "success"
+  },
+  {
+    "firstName": "Bob",
+    "lastName": "Baker",
+    "email": "bob.baker@example.com",
+    "password": "BobSecure456!",
+    "phone": "555-222-3333",
+    "termsAccepted": true,
+    "expectedResult": "success"
+  },
+  {
+    "firstName": "Charlie",
+    "lastName": "Clark",
+    "email": "invalid-email",
+    "password": "CharliePass789!",
+    "phone": "555-333-4444",
+    "termsAccepted": true,
+    "expectedResult": "error",
+    "expectedError": "Invalid email format"
+  },
+  {
+    "firstName": "",
+    "lastName": "Davis",
+    "email": "empty.name@example.com",
+    "password": "EmptyPass123!",
+    "phone": "555-444-5555",
+    "termsAccepted": true,
+    "expectedResult": "error",
+    "expectedError": "First name is required"
+  },
+  {
+    "firstName": "Eve",
+    "lastName": "Evans",
+    "email": "eve.evans@example.com",
+    "password": "123",
+    "phone": "555-555-6666",
+    "termsAccepted": true,
+    "expectedResult": "error",
+    "expectedError": "Password is too weak"
+  },
+  {
+    "firstName": "Frank",
+    "lastName": "Foster",
+    "email": "frank.foster@example.com",
+    "password": "FrankPass123!",
+    "phone": "555-666-7777",
+    "termsAccepted": false,
+    "expectedResult": "error",
+    "expectedError": "You must accept the terms and conditions"
+  }
+]

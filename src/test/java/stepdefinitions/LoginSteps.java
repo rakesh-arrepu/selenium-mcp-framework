@@ -1,5 +1,6 @@
 package stepdefinitions;
 
+import framework.config.ConfigurationManager;
 import framework.healing.HealingMetrics;
 import framework.locators.LocatorRegistry;
 import framework.mcp.MCPSeleniumClient;
@@ -33,6 +34,7 @@ public class LoginSteps {
     private LocatorRegistry locatorRegistry;
     private HealingMetrics healingMetrics;
     private LoginPage loginPage;
+    private ConfigurationManager config;
 
     /**
      * Setup method - runs before each scenario
@@ -46,23 +48,29 @@ public class LoginSteps {
         System.out.println("║              STARTING TEST SCENARIO                           ║");
         System.out.println("╚════════════════════════════════════════════════════════════════╝\n");
 
+        System.out.println("→ Loading configuration...");
+        config = ConfigurationManager.getInstance();
+        config.printConfiguration();
+
         System.out.println("→ Initializing MCP Selenium Client...");
         mcp = new MCPSeleniumClient();
 
         System.out.println("→ Starting MCP server...");
         mcp.startMCPServer();
 
-        System.out.println("→ Starting browser (Chrome, non-headless)...");
-        mcp.startBrowser("chrome", false);
+        System.out.println("→ Starting browser: " + config.getBrowserType() + " (headless: " + config.isBrowserHeadless() + ")");
+        mcp.startBrowser(config.getBrowserType(), config.isBrowserHeadless());
 
         System.out.println("→ Initializing Locator Registry...");
         locatorRegistry = new LocatorRegistry();
 
-        System.out.println("→ Loading locator registry from JSON...");
-        try {
-            locatorRegistry.loadRegistry();
-        } catch (IOException e) {
-            System.out.println("⚠ Could not load existing registry, will create new one");
+        System.out.println("→ Loading locator registry from: " + config.getLocatorRegistryPath());
+        if (config.isLocatorRegistryAutoLoadEnabled()) {
+            try {
+                locatorRegistry.loadRegistry(config.getLocatorRegistryPath());
+            } catch (IOException e) {
+                System.out.println("⚠ Could not load existing registry, will create new one");
+            }
         }
 
         System.out.println("→ Initializing Healing Metrics...");
@@ -93,10 +101,12 @@ public class LoginSteps {
         healingMetrics.printHealingReport();
 
         System.out.println("→ Saving locator registry...");
-        try {
-            locatorRegistry.saveRegistry();
-        } catch (IOException e) {
-            System.err.println("⚠ Could not save registry: " + e.getMessage());
+        if (config.isLocatorRegistryAutoSaveEnabled()) {
+            try {
+                locatorRegistry.saveRegistry(config.getLocatorRegistryPath());
+            } catch (IOException e) {
+                System.err.println("⚠ Could not save registry: " + e.getMessage());
+            }
         }
 
         System.out.println("→ Closing browser...");

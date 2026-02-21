@@ -2,6 +2,13 @@ package framework.healing;
 
 import framework.locators.LocatorRegistry.LocatorStrategy;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -471,5 +478,275 @@ public class HealingMetrics {
     public void clear() {
         elementStats.clear();
         System.out.println("[HealingMetrics] Metrics cleared");
+    }
+
+    /**
+     * Saves current metrics to a JSON file
+     * Creates the directory if it doesn't exist
+     *
+     * @param filePath Path to save the metrics file
+     * @throws IOException if file write fails
+     */
+    public void saveMetricsToFile(String filePath) throws IOException {
+        // Create directory if it doesn't exist
+        File file = new File(filePath);
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // Export metrics to map
+        Map<String, Object> metricsData = exportMetricsAsMap();
+
+        // Add metadata
+        metricsData.put("timestamp", LocalDateTime.now().format(DATE_FORMATTER));
+        metricsData.put("version", "1.0.0");
+
+        // Write to JSON file with pretty printing
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.writeValue(file, metricsData);
+
+        System.out.println("✓ Healing metrics saved to: " + filePath);
+    }
+
+    /**
+     * Saves current metrics with automatic timestamped filename
+     *
+     * @param directory Directory to save metrics
+     * @return Path to saved file
+     * @throws IOException if file write fails
+     */
+    public String saveMetricsWithTimestamp(String directory) throws IOException {
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        String filePath = directory + "/healing-metrics_" + timestamp + ".json";
+        saveMetricsToFile(filePath);
+        return filePath;
+    }
+
+    /**
+     * Loads historical metrics from a JSON file
+     *
+     * @param filePath Path to the metrics file
+     * @return Map containing historical metrics data
+     * @throws IOException if file read fails
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> loadMetricsFromFile(String filePath) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        File file = new File(filePath);
+
+        if (!file.exists()) {
+            throw new IOException("Metrics file not found: " + filePath);
+        }
+
+        Map<String, Object> metricsData = mapper.readValue(file, Map.class);
+        System.out.println("✓ Healing metrics loaded from: " + filePath);
+
+        return metricsData;
+    }
+
+    /**
+     * Loads all historical metrics files from a directory
+     *
+     * @param directory Directory containing metrics files
+     * @return List of historical metrics maps, sorted by timestamp
+     * @throws IOException if directory read fails
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> loadHistoricalMetrics(String directory) throws IOException {
+        List<Map<String, Object>> historicalMetrics = new ArrayList<>();
+        File dir = new File(directory);
+
+        if (!dir.exists() || !dir.isDirectory()) {
+            System.out.println("⚠ Historical metrics directory not found: " + directory);
+            return historicalMetrics;
+        }
+
+        File[] files = dir.listFiles((d, name) -> name.startsWith("healing-metrics_") && name.endsWith(".json"));
+
+        if (files == null || files.length == 0) {
+            System.out.println("⚠ No historical metrics files found in: " + directory);
+            return historicalMetrics;
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        for (File file : files) {
+            try {
+                Map<String, Object> metricsData = mapper.readValue(file, Map.class);
+                metricsData.put("fileName", file.getName());
+                historicalMetrics.add(metricsData);
+            } catch (IOException e) {
+                System.err.println("⚠ Failed to load metrics from: " + file.getName() + " - " + e.getMessage());
+            }
+        }
+
+        // Sort by timestamp (most recent first)
+        historicalMetrics.sort((m1, m2) -> {
+            String ts1 = (String) m1.getOrDefault("timestamp", "");
+            String ts2 = (String) m2.getOrDefault("timestamp", "");
+            return ts2.compareTo(ts1); // Descending order
+        });
+
+        System.out.println("✓ Loaded " + historicalMetrics.size() + " historical metrics files");
+
+        return historicalMetrics;
+    }
+
+    /**
+     * Generates a trend report comparing current metrics with historical data
+     *
+     * @param directory Directory containing historical metrics files
+     * @throws IOException if file operations fail
+     */
+    public void generateTrendReport(String directory) throws IOException {
+        System.out.println("\n╔════════════════════════════════════════════════════════════════╗");
+        System.out.println("║           HEALING METRICS TREND REPORT                        ║");
+        System.out.println("╚════════════════════════════════════════════════════════════════╝");
+
+        // Load historical metrics
+        List<Map<String, Object>> historicalMetrics = loadHistoricalMetrics(directory);
+
+        if (historicalMetrics.isEmpty()) {
+            System.out.println("\nNo historical data available for trend analysis.\n");
+            return;
+        }
+
+        // Current metrics
+        Map<String, Object> currentMetrics = exportMetricsAsMap();
+        Map<String, Object> currentOverall = (Map<String, Object>) currentMetrics.get("overall");
+
+        System.out.println("\n📈 TREND ANALYSIS:");
+        System.out.println("   Historical data points: " + historicalMetrics.size());
+        System.out.println("   Current timestamp: " + LocalDateTime.now().format(DATE_FORMATTER));
+
+        // Overall success rate trend
+        System.out.println("\n📊 OVERALL SUCCESS RATE TREND:");
+        System.out.println("───────────────────────────────────────────────────────────────");
+
+        int count = 0;
+        for (Map<String, Object> metrics : historicalMetrics) {
+            if (count >= 10) break; // Show last 10 data points
+
+            String timestamp = (String) metrics.get("timestamp");
+            Map<String, Object> overall = (Map<String, Object>) metrics.get("overall");
+
+            if (overall != null) {
+                String successRate = (String) overall.get("overallSuccessRate");
+                int totalAttempts = (int) overall.get("totalAttempts");
+                System.out.println("   " + timestamp + " - " + successRate +
+                        " (" + totalAttempts + " attempts)");
+            }
+            count++;
+        }
+
+        // Current metrics
+        System.out.println("   CURRENT - " + currentOverall.get("overallSuccessRate") +
+                " (" + currentOverall.get("totalAttempts") + " attempts)");
+
+        // Element-specific trends
+        System.out.println("\n🔍 ELEMENT TREND ANALYSIS:");
+        System.out.println("───────────────────────────────────────────────────────────────");
+
+        Map<String, List<Double>> elementTrends = new HashMap<>();
+
+        // Collect success rates for each element across history
+        for (Map<String, Object> metrics : historicalMetrics) {
+            List<Map<String, Object>> elements = (List<Map<String, Object>>) metrics.get("elements");
+            if (elements != null) {
+                for (Map<String, Object> element : elements) {
+                    String name = (String) element.get("name");
+                    String successRateStr = (String) element.get("successRate");
+
+                    if (successRateStr != null) {
+                        double successRate = Double.parseDouble(successRateStr.replace("%", ""));
+                        elementTrends.computeIfAbsent(name, k -> new ArrayList<>()).add(successRate);
+                    }
+                }
+            }
+        }
+
+        // Show trends for elements with most data points
+        elementTrends.entrySet().stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue().size(), e1.getValue().size()))
+                .limit(5)
+                .forEach(entry -> {
+                    String elementName = entry.getKey();
+                    List<Double> rates = entry.getValue();
+
+                    double avgRate = rates.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+                    double minRate = rates.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
+                    double maxRate = rates.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+
+                    System.out.println("\n   🔹 " + elementName);
+                    System.out.println("      Data points: " + rates.size());
+                    System.out.println("      Average: " + String.format("%.1f%%", avgRate));
+                    System.out.println("      Range: " + String.format("%.1f%% - %.1f%%", minRate, maxRate));
+
+                    // Determine trend direction
+                    if (rates.size() >= 2) {
+                        double recentAvg = rates.subList(0, Math.min(3, rates.size())).stream()
+                                .mapToDouble(Double::doubleValue).average().orElse(0.0);
+                        double olderAvg = rates.subList(Math.min(3, rates.size()), rates.size()).stream()
+                                .mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+                        if (recentAvg > olderAvg + 5) {
+                            System.out.println("      Trend: ↗ IMPROVING");
+                        } else if (recentAvg < olderAvg - 5) {
+                            System.out.println("      Trend: ↘ DEGRADING");
+                        } else {
+                            System.out.println("      Trend: → STABLE");
+                        }
+                    }
+                });
+
+        // Brittle elements analysis
+        System.out.println("\n⚠️  BRITTLE ELEMENTS TRACKING:");
+        System.out.println("───────────────────────────────────────────────────────────────");
+
+        Map<String, Integer> brittleCount = new HashMap<>();
+
+        for (Map<String, Object> metrics : historicalMetrics) {
+            List<String> brittleElements = (List<String>) metrics.get("brittleElements");
+            if (brittleElements != null) {
+                for (String element : brittleElements) {
+                    brittleCount.merge(element, 1, Integer::sum);
+                }
+            }
+        }
+
+        if (brittleCount.isEmpty()) {
+            System.out.println("   No consistently brittle elements detected.");
+        } else {
+            brittleCount.entrySet().stream()
+                    .sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
+                    .forEach(entry -> {
+                        double percentage = (double) entry.getValue() / historicalMetrics.size() * 100;
+                        System.out.println("   ✗ " + entry.getKey() +
+                                " - Brittle in " + entry.getValue() + "/" + historicalMetrics.size() +
+                                " runs (" + String.format("%.1f%%", percentage) + ")");
+                    });
+        }
+
+        System.out.println("\n════════════════════════════════════════════════════════════════\n");
+    }
+
+    /**
+     * Saves metrics and generates trend report in one operation
+     *
+     * @param directory Directory to save metrics and load historical data
+     * @throws IOException if file operations fail
+     */
+    public void saveAndGenerateTrends(String directory) throws IOException {
+        // Ensure directory exists
+        Files.createDirectories(Paths.get(directory));
+
+        // Save current metrics
+        String savedFile = saveMetricsWithTimestamp(directory);
+        System.out.println("✓ Metrics saved to: " + savedFile);
+
+        // Generate trend report
+        generateTrendReport(directory);
     }
 }

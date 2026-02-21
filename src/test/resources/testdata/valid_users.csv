@@ -1,0 +1,9 @@
+firstName,lastName,email,password,phone
+John,Doe,john.doe@example.com,SecurePass123,555-123-4567
+Jane,Smith,jane.smith@example.com,JanePass456,555-234-5678
+Michael,Johnson,michael.j@example.com,MikeSecure789,555-345-6789
+Sarah,Williams,sarah.w@example.com,SarahPass321,555-456-7890
+David,Brown,david.brown@example.com,DavidSecure654,555-567-8901
+Emma,Garcia,emma.garcia@example.com,EmmaPass987,555-678-9012
+Robert,Miller,robert.m@example.com,RobertPass111,555-789-0123
+Lisa,Davis,lisa.davis@example.com,LisaSecure222,555-890-1234
