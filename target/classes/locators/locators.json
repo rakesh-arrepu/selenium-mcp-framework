@@ -1,0 +1,112 @@
+{
+  "usernameInput": [
+    {
+      "strategy": "id",
+      "value": "username",
+      "priority": 1
+    },
+    {
+      "strategy": "name",
+      "value": "username",
+      "priority": 2
+    },
+    {
+      "strategy": "css",
+      "value": "input[type='text'][name='username']",
+      "priority": 3
+    },
+    {
+      "strategy": "xpath",
+      "value": "//input[@id='username' or @name='username']",
+      "priority": 4
+    }
+  ],
+  "passwordInput": [
+    {
+      "strategy": "id",
+      "value": "password",
+      "priority": 1
+    },
+    {
+      "strategy": "name",
+      "value": "password",
+      "priority": 2
+    },
+    {
+      "strategy": "css",
+      "value": "input[type='password'][name='password']",
+      "priority": 3
+    },
+    {
+      "strategy": "xpath",
+      "value": "//input[@id='password' or @name='password']",
+      "priority": 4
+    }
+  ],
+  "loginButton": [
+    {
+      "strategy": "id",
+      "value": "login-btn",
+      "priority": 1
+    },
+    {
+      "strategy": "css",
+      "value": "button.login-button",
+      "priority": 2
+    },
+    {
+      "strategy": "xpath",
+      "value": "//button[@type='submit' and contains(text(), 'Login')]",
+      "priority": 3
+    },
+    {
+      "strategy": "name",
+      "value": "login",
+      "priority": 4
+    }
+  ],
+  "errorMessage": [
+    {
+      "strategy": "id",
+      "value": "error-message",
+      "priority": 1
+    },
+    {
+      "strategy": "css",
+      "value": ".error-message",
+      "priority": 2
+    },
+    {
+      "strategy": "xpath",
+      "value": "//div[contains(@class, 'error')]",
+      "priority": 3
+    },
+    {
+      "strategy": "css",
+      "value": "[role='alert'].error",
+      "priority": 4
+    }
+  ],
+  "successMessage": [
+    {
+      "strategy": "id",
+      "value": "success-message",
+      "priority": 1
+    },
+    {
+      "strategy": "css",
+      "value": ".success-message",
+      "priority": 2
+    },
+    {
+      "strategy": "xpath",
+      "value": "//div[contains(@class, 'success')]",
+      "priority": 3
+    },
+    {
+      "strategy": "css",
+      "value": "[role='alert'].success",
+      "priority": 4
+    }
+  ]
+}

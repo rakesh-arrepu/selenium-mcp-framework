@@ -111,7 +111,7 @@ public class HealingMetrics {
 
         @Override
         public String toString() {
-            return String.format("%s=%s (%.1f%% - %d/%d)",
+            return "%s=%s (%.1f%% - %d/%d)".formatted(
                     strategy, value, getSuccessRate(), successes, attempts);
         }
     }
@@ -184,7 +184,7 @@ public class HealingMetrics {
 
             // Keep only recent failures
             if (failureHistory.size() > MAX_FAILURE_HISTORY) {
-                failureHistory.remove(0);
+                failureHistory.removeFirst();
             }
         }
 
@@ -334,7 +334,7 @@ public class HealingMetrics {
         System.out.println("   Total healing attempts: " + totalAttempts);
         System.out.println("   Successful heals: " + totalSuccesses);
         System.out.println("   Failed heals: " + totalFailures);
-        System.out.println("   Overall success rate: " + String.format("%.1f%%", overallSuccessRate));
+        System.out.println("   Overall success rate: " + "%.1f%%".formatted(overallSuccessRate));
 
         System.out.println("\n📝 ELEMENT-BY-ELEMENT BREAKDOWN:");
         System.out.println("───────────────────────────────────────────────────────────────");
@@ -360,7 +360,7 @@ public class HealingMetrics {
         } else {
             brittleElements.forEach(name -> {
                 ElementHealingStats stats = elementStats.get(name);
-                System.out.println("   ✗ " + name + " - " + String.format("%.1f%%", stats.getHealingSuccessRate()));
+                System.out.println("   ✗ " + name + " - " + "%.1f%%".formatted(stats.getHealingSuccessRate()));
             });
         }
 
@@ -374,7 +374,7 @@ public class HealingMetrics {
      */
     private void printElementStats(ElementHealingStats stats) {
         System.out.println("\n🔹 " + stats.getElementName());
-        System.out.println("   Success Rate: " + String.format("%.1f%%", stats.getHealingSuccessRate()) +
+        System.out.println("   Success Rate: " + "%.1f%%".formatted(stats.getHealingSuccessRate()) +
                 " (" + stats.getSuccessfulHeals() + "/" + stats.getTotalAttempts() + " attempts)");
 
         if (stats.getLastAttempt() != null) {
@@ -415,7 +415,7 @@ public class HealingMetrics {
         overall.put("totalAttempts", totalAttempts);
         overall.put("totalSuccesses", totalSuccesses);
         overall.put("totalFailures", totalFailures);
-        overall.put("overallSuccessRate", String.format("%.2f%%", overallSuccessRate));
+        overall.put("overallSuccessRate", "%.2f%%".formatted(overallSuccessRate));
 
         export.put("overall", overall);
 
@@ -426,7 +426,7 @@ public class HealingMetrics {
             elementData.put("totalAttempts", stats.getTotalAttempts());
             elementData.put("successfulHeals", stats.getSuccessfulHeals());
             elementData.put("failedHeals", stats.getFailedHeals());
-            elementData.put("successRate", String.format("%.2f%%", stats.getHealingSuccessRate()));
+            elementData.put("successRate", "%.2f%%".formatted(stats.getHealingSuccessRate()));
             elementData.put("mostReliableLocator", stats.getMostReliableLocator());
 
             if (stats.getLastAttempt() != null) {
@@ -441,7 +441,7 @@ public class HealingMetrics {
                 locatorData.put("attempts", perf.getAttempts());
                 locatorData.put("successes", perf.getSuccesses());
                 locatorData.put("failures", perf.getFailures());
-                locatorData.put("successRate", String.format("%.2f%%", perf.getSuccessRate()));
+                locatorData.put("successRate", "%.2f%%".formatted(perf.getSuccessRate()));
                 locators.add(locatorData);
             }
             elementData.put("locatorPerformance", locators);

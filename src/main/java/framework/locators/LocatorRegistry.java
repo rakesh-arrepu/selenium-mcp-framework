@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -342,7 +342,7 @@ public class LocatorRegistry {
 
         System.out.println("[LocatorRegistry] Loading registry from: " + filePath);
 
-        String jsonContent = new String(Files.readAllBytes(Paths.get(filePath)));
+        String jsonContent = new String(Files.readAllBytes(Path.of(filePath)));
         JsonNode root = objectMapper.readTree(jsonContent);
 
         if (!root.isObject()) {
@@ -407,7 +407,7 @@ public class LocatorRegistry {
                 // Add statistics for analysis
                 strategyNode.put("successCount", locator.getSuccessCount(strategy));
                 strategyNode.put("failureCount", locator.getFailureCount(strategy));
-                strategyNode.put("successRate", String.format("%.2f", locator.getSuccessRate(strategy) * 100) + "%");
+                strategyNode.put("successRate", "%.2f".formatted(locator.getSuccessRate(strategy) * 100) + "%");
 
                 strategiesArray.add(strategyNode);
             }

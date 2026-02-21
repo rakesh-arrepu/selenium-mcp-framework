@@ -1,0 +1,10 @@
+framework/mcp/MCPSeleniumClient.class
+framework/healing/HealingMetrics$LocatorPerformance.class
+framework/locators/LocatorRegistry$LocatorStrategy.class
+framework/pages/LoginPage.class
+framework/healing/HealingMetrics$ElementHealingStats.class
+framework/locators/LocatorRegistry$ElementLocator.class
+framework/locators/LocatorRegistry.class
+framework/healing/SelfHealingElement.class
+framework/healing/HealingMetrics.class
+framework/pages/BasePage.class
