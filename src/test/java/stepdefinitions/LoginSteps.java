@@ -40,7 +40,7 @@ public class LoginSteps {
      *
      * @throws IOException if setup fails
      */
-    @Before
+    @Before("@login")
     public void setUp() throws IOException {
         System.out.println("\n╔════════════════════════════════════════════════════════════════╗");
         System.out.println("║              STARTING TEST SCENARIO                           ║");
@@ -83,34 +83,40 @@ public class LoginSteps {
      *
      * @throws IOException if cleanup fails
      */
-    @After
-    public void tearDown() throws IOException {
+    @After("@login")
+    public void tearDown() {
         System.out.println("\n╔════════════════════════════════════════════════════════════════╗");
         System.out.println("║              CLEANING UP TEST SCENARIO                        ║");
         System.out.println("╚════════════════════════════════════════════════════════════════╝\n");
 
-        System.out.println("→ Printing healing metrics report...");
-        healingMetrics.printHealingReport();
-
-        System.out.println("→ Saving locator registry...");
-        try {
-            locatorRegistry.saveRegistry();
-        } catch (IOException e) {
-            System.err.println("⚠ Could not save registry: " + e.getMessage());
+        if (healingMetrics != null) {
+            System.out.println("→ Printing healing metrics report...");
+            healingMetrics.printHealingReport();
         }
 
-        System.out.println("→ Closing browser...");
-        try {
-            mcp.closeBrowser();
-        } catch (IOException e) {
-            System.err.println("⚠ Could not close browser: " + e.getMessage());
+        if (locatorRegistry != null) {
+            System.out.println("→ Saving locator registry...");
+            try {
+                locatorRegistry.saveRegistry();
+            } catch (IOException e) {
+                System.err.println("⚠ Could not save registry: " + e.getMessage());
+            }
         }
 
-        System.out.println("→ Stopping MCP server...");
-        try {
-            mcp.stopMCPServer();
-        } catch (IOException e) {
-            System.err.println("⚠ Could not stop MCP server: " + e.getMessage());
+        if (mcp != null) {
+            System.out.println("→ Closing browser...");
+            try {
+                mcp.closeBrowser();
+            } catch (Exception e) {
+                System.err.println("⚠ Could not close browser: " + e.getMessage());
+            }
+
+            System.out.println("→ Stopping MCP server...");
+            try {
+                mcp.stopMCPServer();
+            } catch (Exception e) {
+                System.err.println("⚠ Could not stop MCP server: " + e.getMessage());
+            }
         }
 
         System.out.println("\n✓ Cleanup complete\n");
@@ -244,7 +250,7 @@ public class LoginSteps {
     @Given("user navigates to {string}")
     public void userNavigatesTo(String url) throws IOException {
         System.out.println("\n→ STEP: User navigates to: " + url);
-        loginPage.navigateToLoginPage(url);
+        mcp.navigate(url);
         System.out.println("✓ Navigation complete\n");
     }
 

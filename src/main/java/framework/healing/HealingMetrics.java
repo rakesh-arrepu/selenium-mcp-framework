@@ -184,7 +184,7 @@ public class HealingMetrics {
 
             // Keep only recent failures
             if (failureHistory.size() > MAX_FAILURE_HISTORY) {
-                failureHistory.removeFirst();
+                failureHistory.remove(0);
             }
         }
 

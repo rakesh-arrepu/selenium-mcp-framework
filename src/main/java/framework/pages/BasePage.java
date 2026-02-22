@@ -40,6 +40,8 @@ import java.io.IOException;
  */
 public class BasePage {
 
+    protected static final String BASE_URL = "https://the-internet.herokuapp.com";
+
     protected final MCPSeleniumClient mcp;
     protected final LocatorRegistry locatorRegistry;
     protected final HealingMetrics healingMetrics;
@@ -191,6 +193,17 @@ public class BasePage {
         System.out.println("[BasePage] Navigating to: " + url);
         mcp.navigate(url);
         System.out.println("[BasePage] ✓ Navigation complete");
+    }
+
+    /**
+     * Navigates to the application homepage (BASE_URL)
+     * Page objects can call this, then click the relevant link to reach their page.
+     *
+     * @throws IOException if navigation fails
+     */
+    protected void navigateToHomePage() throws IOException {
+        System.out.println("[BasePage] Navigating to homepage: " + BASE_URL);
+        navigateTo(BASE_URL);
     }
 
     /**

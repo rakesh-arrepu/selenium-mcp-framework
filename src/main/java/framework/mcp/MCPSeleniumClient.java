@@ -17,21 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * It manages the MCP server process lifecycle, sends commands, and processes responses.
  *
  * Key Features:
- * - Automatic MCP server startup/shutdown
+ * - Automatic MCP server startup/shutdown with protocol handshake
  * - JSON-RPC 2.0 protocol communication over stdio
  * - Configurable timeout handling (default 30 seconds)
  * - Comprehensive logging with [MCP] prefix
- * - Support for all mcp-selenium tools
- *
- * Example Usage:
- * <pre>
- * MCPSeleniumClient mcp = new MCPSeleniumClient();
- * mcp.startMCPServer();
- * mcp.startBrowser("chrome", false);
- * mcp.navigate("https://example.com");
- * String elementId = mcp.findElement("id", "username", 5000);
- * mcp.closeBrowser();
- * </pre>
+ * - Support for all @angiejones/mcp-selenium tools
  *
  * @author Selenium-MCP Framework
  * @version 1.0.0
@@ -45,6 +35,7 @@ public class MCPSeleniumClient {
     private final ObjectMapper objectMapper;
     private final AtomicInteger requestIdCounter;
     private static final long DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
+    private static final String MCP_PROTOCOL_VERSION = "2024-11-05";
 
     /**
      * Creates a new MCPSeleniumClient instance
@@ -57,16 +48,16 @@ public class MCPSeleniumClient {
     }
 
     /**
-     * Starts the MCP Selenium server as a subprocess
-     * The server runs the npx @executeautomation/mcp-selenium command
+     * Starts the MCP Selenium server as a subprocess and performs protocol handshake.
+     * The server runs the npx @angiejones/mcp-selenium command.
      *
-     * @throws IOException if server startup fails
+     * @throws IOException if server startup or handshake fails
      */
     public void startMCPServer() throws IOException {
         System.out.println("[MCP] Starting MCP Selenium server...");
 
         try {
-            ProcessBuilder pb = new ProcessBuilder("npx", "@executeautomation/mcp-selenium");
+            ProcessBuilder pb = new ProcessBuilder("npx", "@angiejones/mcp-selenium");
             pb.redirectErrorStream(false);
 
             mcpProcess = pb.start();
@@ -76,16 +67,130 @@ public class MCPSeleniumClient {
             processError = new BufferedReader(new InputStreamReader(mcpProcess.getErrorStream()));
 
             // Give server time to initialize
-            Thread.sleep(2000);
+            Thread.sleep(3000);
 
-            System.out.println("[MCP] MCP Selenium server started successfully");
+            // Verify the process is still alive
+            if (!mcpProcess.isAlive()) {
+                String errorOutput = drainErrorStream();
+                throw new IOException("MCP server process died on startup. Stderr: " + errorOutput);
+            }
+
+            // Perform MCP protocol initialization handshake
+            performHandshake();
+
+            System.out.println("[MCP] MCP Selenium server started and initialized successfully");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Server startup interrupted", e);
         } catch (IOException e) {
             System.err.println("[MCP] Failed to start MCP server: " + e.getMessage());
-            throw new IOException("Failed to start MCP server. Ensure Node.js and @executeautomation/mcp-selenium are installed.", e);
+            throw new IOException("Failed to start MCP server. Ensure Node.js and @angiejones/mcp-selenium are installed. " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Performs the MCP protocol initialization handshake.
+     * Sends initialize request, receives response, then sends initialized notification.
+     *
+     * @throws IOException if handshake fails
+     */
+    private void performHandshake() throws IOException {
+        System.out.println("[MCP] Performing protocol handshake...");
+
+        // Step 1: Send initialize request
+        int initId = requestIdCounter.getAndIncrement();
+        ObjectNode initRequest = objectMapper.createObjectNode();
+        initRequest.put("jsonrpc", "2.0");
+        initRequest.put("id", initId);
+        initRequest.put("method", "initialize");
+
+        ObjectNode initParams = objectMapper.createObjectNode();
+        initParams.put("protocolVersion", MCP_PROTOCOL_VERSION);
+        initParams.set("capabilities", objectMapper.createObjectNode());
+
+        ObjectNode clientInfo = objectMapper.createObjectNode();
+        clientInfo.put("name", "selenium-mcp-java-client");
+        clientInfo.put("version", "1.0.0");
+        initParams.set("clientInfo", clientInfo);
+
+        initRequest.set("params", initParams);
+
+        String initJson = objectMapper.writeValueAsString(initRequest);
+        processInput.write(initJson);
+        processInput.newLine();
+        processInput.flush();
+
+        // Step 2: Read initialize response
+        String responseLine = readResponseLine(DEFAULT_TIMEOUT_MS);
+        if (responseLine == null) {
+            throw new IOException("Timeout waiting for initialize response from MCP server");
+        }
+
+        JsonNode initResponse = objectMapper.readTree(responseLine);
+        if (initResponse.has("error")) {
+            throw new IOException("MCP initialize failed: " + initResponse.get("error"));
+        }
+
+        System.out.println("[MCP] Initialize response received");
+
+        // Step 3: Send initialized notification (no id, no response expected)
+        ObjectNode notification = objectMapper.createObjectNode();
+        notification.put("jsonrpc", "2.0");
+        notification.put("method", "notifications/initialized");
+
+        String notifJson = objectMapper.writeValueAsString(notification);
+        processInput.write(notifJson);
+        processInput.newLine();
+        processInput.flush();
+
+        System.out.println("[MCP] Protocol handshake completed");
+    }
+
+    /**
+     * Reads a single response line from the MCP server stdout with timeout.
+     *
+     * @param timeoutMs Timeout in milliseconds
+     * @return The response line or null if timeout
+     * @throws IOException if read fails
+     */
+    private String readResponseLine(long timeoutMs) throws IOException {
+        long startTime = System.currentTimeMillis();
+
+        while (System.currentTimeMillis() - startTime < timeoutMs) {
+            if (processOutput.ready()) {
+                String line = processOutput.readLine();
+                if (line != null && !line.isBlank()) {
+                    return line;
+                }
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Read interrupted", e);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Drains the error stream for diagnostic output.
+     *
+     * @return Error stream content
+     */
+    private String drainErrorStream() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            while (processError != null && processError.ready()) {
+                String line = processError.readLine();
+                if (line != null) {
+                    sb.append(line).append("\n");
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return sb.toString().trim();
     }
 
     /**
@@ -142,6 +247,10 @@ public class MCPSeleniumClient {
      * @throws IOException if communication fails or timeout occurs
      */
     private JsonNode sendRequest(String method, Map<String, Object> params, long timeoutMs) throws IOException {
+        if (mcpProcess == null || !mcpProcess.isAlive()) {
+            throw new IOException("[MCP] Server process is not running");
+        }
+
         int requestId = requestIdCounter.getAndIncrement();
 
         ObjectNode request = objectMapper.createObjectNode();
@@ -162,21 +271,7 @@ public class MCPSeleniumClient {
         processInput.flush();
 
         // Wait for response with timeout
-        long startTime = System.currentTimeMillis();
-        String responseLine = null;
-
-        while (System.currentTimeMillis() - startTime < timeoutMs) {
-            if (processOutput.ready()) {
-                responseLine = processOutput.readLine();
-                break;
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Request interrupted", e);
-            }
-        }
+        String responseLine = readResponseLine(timeoutMs);
 
         if (responseLine == null) {
             throw new IOException("[MCP] Timeout waiting for response from MCP server (timeout: " + timeoutMs + "ms)");
@@ -196,9 +291,25 @@ public class MCPSeleniumClient {
     }
 
     /**
+     * Extracts the content text from an MCP response and validates it.
+     * Throws IOException if the content indicates an error from the MCP tool.
+     *
+     * @param result The JSON result node
+     * @return Extracted content text
+     * @throws IOException if the content indicates a tool-level error
+     */
+    private String extractAndValidateContent(JsonNode result) throws IOException {
+        String content = extractContent(result);
+        if (content.startsWith("Error ") || content.startsWith("Error:")) {
+            throw new IOException("[MCP] " + content);
+        }
+        return content;
+    }
+
+    /**
      * Starts a browser session
      *
-     * @param browserName Browser type (chrome, firefox, edge, safari)
+     * @param browserName Browser type (chrome, firefox)
      * @param headless Whether to run in headless mode
      * @return Result message from server
      * @throws IOException if browser startup fails
@@ -207,11 +318,15 @@ public class MCPSeleniumClient {
         System.out.println("[MCP] Starting browser: " + browserName + " (headless: " + headless + ")");
 
         Map<String, Object> params = new HashMap<>();
-        params.put("browserName", browserName);
-        params.put("headless", headless);
+        params.put("browser", browserName);
+        if (headless) {
+            Map<String, Object> options = new HashMap<>();
+            options.put("headless", true);
+            params.put("options", options);
+        }
 
-        JsonNode result = sendRequest("selenium_start_browser", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("start_browser", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -227,17 +342,17 @@ public class MCPSeleniumClient {
         Map<String, Object> params = new HashMap<>();
         params.put("url", url);
 
-        JsonNode result = sendRequest("selenium_navigate", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("navigate", params);
+        return extractAndValidateContent(result);
     }
 
     /**
      * Finds an element on the page
      *
-     * @param by Locator strategy (id, css, xpath, name, className, tagName, linkText, partialLinkText)
+     * @param by Locator strategy (id, css, xpath, name, tag, class)
      * @param value Locator value
      * @param timeout Timeout in milliseconds
-     * @return Element ID or description
+     * @return Element result text
      * @throws IOException if element not found or timeout
      */
     public String findElement(String by, String value, long timeout) throws IOException {
@@ -248,8 +363,8 @@ public class MCPSeleniumClient {
         params.put("value", value);
         params.put("timeout", timeout);
 
-        JsonNode result = sendRequest("selenium_find_element", params, timeout + 5000);
-        return extractContent(result);
+        JsonNode result = sendRequest("find_element", params, timeout + 5000);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -267,8 +382,8 @@ public class MCPSeleniumClient {
         params.put("by", by);
         params.put("value", value);
 
-        JsonNode result = sendRequest("selenium_click_element", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("click_element", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -288,8 +403,8 @@ public class MCPSeleniumClient {
         params.put("value", value);
         params.put("text", text);
 
-        JsonNode result = sendRequest("selenium_send_keys", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("send_keys", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -307,7 +422,8 @@ public class MCPSeleniumClient {
         params.put("by", by);
         params.put("value", value);
 
-        JsonNode result = sendRequest("selenium_get_element_text", params);
+        JsonNode result = sendRequest("get_element_text", params);
+        // Don't validate for error prefix here — getText() may return any user-visible text
         return extractContent(result);
     }
 
@@ -326,8 +442,8 @@ public class MCPSeleniumClient {
         params.put("by", by);
         params.put("value", value);
 
-        JsonNode result = sendRequest("selenium_hover_element", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("hover", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -344,13 +460,13 @@ public class MCPSeleniumClient {
         System.out.println("[MCP] Drag and drop: " + sourceBy + "=" + sourceValue + " → " + targetBy + "=" + targetValue);
 
         Map<String, Object> params = new HashMap<>();
-        params.put("sourceBy", sourceBy);
-        params.put("sourceValue", sourceValue);
+        params.put("by", sourceBy);
+        params.put("value", sourceValue);
         params.put("targetBy", targetBy);
         params.put("targetValue", targetValue);
 
-        JsonNode result = sendRequest("selenium_drag_and_drop", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("drag_and_drop", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -368,8 +484,8 @@ public class MCPSeleniumClient {
         params.put("by", by);
         params.put("value", value);
 
-        JsonNode result = sendRequest("selenium_double_click", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("double_click", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -387,8 +503,8 @@ public class MCPSeleniumClient {
         params.put("by", by);
         params.put("value", value);
 
-        JsonNode result = sendRequest("selenium_right_click", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("right_click", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -404,8 +520,8 @@ public class MCPSeleniumClient {
         Map<String, Object> params = new HashMap<>();
         params.put("key", key);
 
-        JsonNode result = sendRequest("selenium_press_key", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("press_key", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -421,8 +537,8 @@ public class MCPSeleniumClient {
         Map<String, Object> params = new HashMap<>();
         params.put("outputPath", outputPath);
 
-        JsonNode result = sendRequest("selenium_take_screenshot", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("take_screenshot", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -442,8 +558,8 @@ public class MCPSeleniumClient {
         params.put("value", value);
         params.put("filePath", filePath);
 
-        JsonNode result = sendRequest("selenium_upload_file", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("upload_file", params);
+        return extractAndValidateContent(result);
     }
 
     /**
@@ -457,8 +573,8 @@ public class MCPSeleniumClient {
 
         Map<String, Object> params = new HashMap<>();
 
-        JsonNode result = sendRequest("selenium_close_browser", params);
-        return extractContent(result);
+        JsonNode result = sendRequest("close_session", params);
+        return extractAndValidateContent(result);
     }
 
     /**
