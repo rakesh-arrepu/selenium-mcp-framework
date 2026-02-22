@@ -231,7 +231,7 @@ public class SelfHealingElement {
             attemptedStrategies.add(strategy);
 
             System.out.println("[SelfHealing]   → Trying: " + strategy.getStrategy() + "=" + strategy.getValue() +
-                    " (success rate: " + String.format("%.1f%%", locator.getSuccessRate(strategy) * 100) + ")");
+                    " (success rate: " + "%.1f%%".formatted(locator.getSuccessRate(strategy) * 100) + ")");
 
             // Retry mechanism for each strategy
             for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
@@ -291,7 +291,7 @@ public class SelfHealingElement {
             return "No healing stats available for: " + elementName;
         }
 
-        return String.format("%s - Success Rate: %.1f%% (%d/%d attempts)",
+        return "%s - Success Rate: %.1f%% (%d/%d attempts)".formatted(
                 elementName,
                 stats.getHealingSuccessRate(),
                 stats.getSuccessfulHeals(),

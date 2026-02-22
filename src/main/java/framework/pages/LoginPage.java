@@ -38,9 +38,7 @@ public class LoginPage extends BasePage {
     public static final String LOGIN_BUTTON = "loginButton";
     public static final String ERROR_MESSAGE = "errorMessage";
     public static final String SUCCESS_MESSAGE = "successMessage";
-
-    // Default login page URL (can be configured)
-    private static final String LOGIN_PAGE_URL = "https://example.com/login";
+    public static final String HOMEPAGE_LOGIN_LINK = "homepageLoginLink";
 
     /**
      * Creates a new LoginPage instance
@@ -78,52 +76,51 @@ public class LoginPage extends BasePage {
                 new LocatorStrategy("xpath", "//input[@id='password' or @name='password']", 4)
         );
 
-        // Login button
+        // Login button (the-internet uses button.radius with type=submit)
         locatorRegistry.addElement(LOGIN_BUTTON,
-                new LocatorStrategy("id", "login-btn", 1),
-                new LocatorStrategy("css", "button.login-button", 2),
-                new LocatorStrategy("xpath", "//button[@type='submit' and contains(text(), 'Login')]", 3),
-                new LocatorStrategy("name", "login", 4)
+                new LocatorStrategy("css", "button[type='submit']", 1),
+                new LocatorStrategy("css", "button.radius", 2),
+                new LocatorStrategy("xpath", "//button[@type='submit']", 3),
+                new LocatorStrategy("css", "#login button", 4)
         );
 
-        // Error message (displayed on login failure)
+        // Error message (the-internet uses div#flash.flash.error)
         locatorRegistry.addElement(ERROR_MESSAGE,
-                new LocatorStrategy("id", "error-message", 1),
-                new LocatorStrategy("css", ".error-message", 2),
-                new LocatorStrategy("xpath", "//div[contains(@class, 'error')]", 3),
-                new LocatorStrategy("css", "[role='alert'].error", 4)
+                new LocatorStrategy("css", "#flash.error", 1),
+                new LocatorStrategy("css", ".flash.error", 2),
+                new LocatorStrategy("xpath", "//div[@id='flash' and contains(@class,'error')]", 3),
+                new LocatorStrategy("id", "flash", 4)
         );
 
-        // Success message (displayed on successful login)
+        // Success message (the-internet uses div#flash.flash.success on /secure page)
         locatorRegistry.addElement(SUCCESS_MESSAGE,
-                new LocatorStrategy("id", "success-message", 1),
-                new LocatorStrategy("css", ".success-message", 2),
-                new LocatorStrategy("xpath", "//div[contains(@class, 'success')]", 3),
-                new LocatorStrategy("css", "[role='alert'].success", 4)
+                new LocatorStrategy("css", "#flash.success", 1),
+                new LocatorStrategy("css", ".flash.success", 2),
+                new LocatorStrategy("xpath", "//div[@id='flash' and contains(@class,'success')]", 3),
+                new LocatorStrategy("id", "flash", 4)
+        );
+
+        // Homepage link to reach login page (MCP doesn't support linkText, so use css/xpath)
+        locatorRegistry.addElement(HOMEPAGE_LOGIN_LINK,
+                new LocatorStrategy("css", "a[href='/login']", 1),
+                new LocatorStrategy("xpath", "//a[text()='Form Authentication']", 2),
+                new LocatorStrategy("xpath", "//a[contains(@href,'login')]", 3)
         );
 
         log("✓ Locators initialized successfully");
     }
 
     /**
-     * Navigates to the login page
+     * Navigates to the login page via the homepage link
+     * Goes to BASE_URL first, then clicks the "Form Authentication" link
      *
      * @throws IOException if navigation fails
      */
     public void navigateToLoginPage() throws IOException {
-        log("Navigating to login page");
-        navigateTo(LOGIN_PAGE_URL);
-    }
-
-    /**
-     * Navigates to a custom login URL
-     *
-     * @param url Custom login page URL
-     * @throws IOException if navigation fails
-     */
-    public void navigateToLoginPage(String url) throws IOException {
-        log("Navigating to custom login page: " + url);
-        navigateTo(url);
+        log("Navigating to login page via homepage");
+        navigateToHomePage();
+        element(HOMEPAGE_LOGIN_LINK).click();
+        log("✓ Reached login page via homepage link");
     }
 
     /**
