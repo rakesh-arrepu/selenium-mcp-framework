@@ -2,183 +2,199 @@
 
 > **AI-Powered Test Automation with Self-Healing Capabilities**
 
-A revolutionary test automation framework that combines **Selenium**, **MCP (Model Context Protocol)**, and **AI tools** to enable testers to generate test cases with minimal effort while achieving unprecedented test stability.
+A test automation framework that combines **Selenium**, **MCP (Model Context Protocol)**, and **Cucumber BDD** to deliver self-healing locator management and AI-assisted test generation. Java communicates with a Node.js MCP Selenium server via JSON-RPC 2.0 over stdio, providing automatic locator fallback and learning from every test execution.
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
-- **🤖 AI-Powered Test Generation**: Works seamlessly with Claude Code, Cline, and Amazon Q
-- **🔄 Self-Healing Locators**: Automatic fallback through multiple locator strategies
-- **📊 Intelligent Learning**: Tracks success rates and optimizes locator usage
-- **💰 Zero API Costs**: Uses local MCP Selenium server
-- **📈 Comprehensive Metrics**: Detailed healing performance reports
-- **🎭 BDD Support**: Full Cucumber integration for Gherkin scenarios
-
----
-
-## 📊 Expected Performance
-
-- **88% reduction** in test creation time
-- **83% improvement** in test stability
-- **Automatic recovery** from locator failures
-- **Continuous learning** from test executions
+- **Self-Healing Locators**: Automatic fallback through multiple locator strategies, sorted by success rate
+- **Intelligent Learning**: Tracks success/failure per locator strategy and optimizes selection over time
+- **Zero API Costs**: Uses a local MCP Selenium server (`@executeautomation/mcp-selenium`) — no cloud API keys needed
+- **BDD with Cucumber**: Full Gherkin scenario support with tagged execution
+- **Comprehensive Metrics**: Detailed per-element healing reports identifying brittle and robust elements
+- **Page Object Model**: Clean POM architecture with `BasePage` inheritance and element name constants
+- **AI-Assisted Generation**: Works with Claude Code, Cline, and Amazon Q for generating test artifacts
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AI Tools Layer                           │
-│         (Claude Code, Cline, Amazon Q)                      │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│                  Cucumber BDD Layer                         │
-│            (Gherkin Features → Step Definitions)            │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│                  Page Object Layer                          │
-│         (LoginPage, DashboardPage, etc.)                    │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│              Self-Healing Framework Core                    │
-│  ┌──────────────┬──────────────┬──────────────┐            │
-│  │ BasePage     │ SelfHealing  │ Healing      │            │
-│  │              │ Element      │ Metrics      │            │
-│  └──────────────┴──────────────┴──────────────┘            │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│              Locator Management Layer                       │
-│  ┌──────────────────────────────────────────┐              │
-│  │      LocatorRegistry (JSON-based)        │              │
-│  │  - Multiple strategies per element       │              │
-│  │  - Success/failure tracking              │              │
-│  │  - Priority-based fallback               │              │
-│  └──────────────────────────────────────────┘              │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│              MCP Communication Layer                        │
-│         (JSON-RPC 2.0 over stdio)                           │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│              MCP Selenium Server                            │
-│         (@executeautomation/mcp-selenium)                   │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│              Browser (Chrome, Firefox, etc.)                │
-└─────────────────────────────────────────────────────────────┘
+```text
+Cucumber BDD (.feature files)
+  -> Step Definitions (stepdefinitions/)
+    -> Page Objects (pages/ extending BasePage)
+      -> SelfHealingElement (healing/) -- retry/fallback chain
+        -> LocatorRegistry (locators/) -- multi-strategy, JSON-persisted
+          -> MCPSeleniumClient (mcp/) -- JSON-RPC 2.0 stdio bridge
+            -> npx @executeautomation/mcp-selenium (Node.js process)
+              -> Browser (Chrome, Firefox)
 ```
 
+### Design Patterns
+
+| Pattern | Implementation |
+| --- | --- |
+| Page Object Model | `BasePage` + page subclasses with element constants |
+| Chain of Responsibility | Locator fallback chain in `SelfHealingElement` |
+| Strategy | `LocatorStrategy` objects selected dynamically by success rate |
+| Registry | `LocatorRegistry` — in-memory + JSON persistence |
+| Decorator | `SelfHealingElement` wraps all browser actions with healing |
+
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Java 11+** installed
-- **Maven 3.6+** installed
-- **Node.js 16+** installed
-- **npm** installed
+- **Java 21+**
+- **Maven 3.6+**
+- **Node.js 16+**
+- **npm**
 
 ### Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone <repository-url>
    cd selenium-mcp-framework
    ```
 
 2. **Install MCP Selenium**:
+
    ```bash
    npm install -g @executeautomation/mcp-selenium
    ```
 
 3. **Build the project**:
+
    ```bash
    mvn clean install
    ```
 
-4. **Run example tests**:
+4. **Run tests**:
+
    ```bash
    mvn test
    ```
 
 ---
 
-## 💡 How It Works
+## Project Structure
 
-### 1. Self-Healing Element Discovery
-
-When you interact with an element, the framework:
-
-1. **Retrieves all registered locator strategies** (sorted by success rate)
-2. **Tries each strategy** in order (best-performing first)
-3. **Records success/failure** for continuous learning
-4. **Automatically falls back** to alternative strategies on failure
-5. **Updates metrics** for reporting and optimization
-
-### 2. Example: Login Button Click
-
-```java
-// Traditional approach (brittle):
-driver.findElement(By.id("login-btn")).click();
-
-// Self-healing approach:
-element("loginButton").click();
-```
-
-Behind the scenes, the framework tries:
-1. ✓ `id=login-btn` (Success rate: 95%)
-2. ✗ `css=button.login-button` (if #1 fails)
-3. ✗ `xpath=//button[@type='submit']` (if #2 fails)
-4. ✗ `name=login` (if #3 fails)
-
----
-
-## 📁 Project Structure
-
-```
+```text
 selenium-mcp-framework/
 ├── src/
 │   ├── main/java/framework/
 │   │   ├── mcp/
-│   │   │   └── MCPSeleniumClient.java      # MCP server wrapper
+│   │   │   └── MCPSeleniumClient.java          # JSON-RPC 2.0 client for MCP server
 │   │   ├── locators/
-│   │   │   └── LocatorRegistry.java        # Locator management
+│   │   │   └── LocatorRegistry.java            # Element-to-strategies store, JSON persistence
 │   │   ├── healing/
-│   │   │   ├── SelfHealingElement.java     # Self-healing logic
-│   │   │   └── HealingMetrics.java         # Performance tracking
+│   │   │   ├── SelfHealingElement.java         # Core healing algorithm with retry logic
+│   │   │   └── HealingMetrics.java             # Per-element performance tracking and reports
 │   │   └── pages/
-│   │       ├── BasePage.java               # Base page class
-│   │       └── LoginPage.java              # Example page object
+│   │       ├── BasePage.java                   # POM base class (element(), navigateTo(), assertions)
+│   │       ├── LoginPage.java                  # Login page (the-internet.herokuapp.com/login)
+│   │       ├── CheckboxPage.java               # Checkboxes page (elements without IDs)
+│   │       └── AddRemoveElementsPage.java      # Add/Remove Elements page (dynamic elements)
 │   └── test/
-│       ├── java/stepdefinitions/
-│       │   └── LoginSteps.java             # Cucumber steps
+│       ├── java/
+│       │   ├── runners/
+│       │   │   └── RunCucumberTest.java        # Cucumber JUnit runner
+│       │   └── stepdefinitions/
+│       │       ├── LoginSteps.java             # Login feature step definitions
+│       │       ├── CheckboxSteps.java          # Checkbox feature step definitions
+│       │       └── AddRemoveElementsSteps.java # Add/Remove feature step definitions
 │       └── resources/
 │           ├── features/
-│           │   └── login.feature           # Gherkin scenarios
+│           │   ├── login.feature               # Login scenarios (3 scenarios)
+│           │   ├── checkbox.feature            # Checkbox scenarios (3 scenarios)
+│           │   └── add_remove_elements.feature # Add/Remove scenarios (9 scenarios)
 │           └── locators/
-│               └── locators.json           # Locator configuration
-├── screenshots/                            # Test screenshots
-│   ├── baseline/                           # Baseline images
-│   └── current/                            # Current screenshots
-├── pom.xml                                 # Maven configuration
-└── README.md                               # This file
+│               └── locators.json              # Locator configuration with success stats
+├── pom.xml
+├── CLAUDE.md
+└── README.md
 ```
 
 ---
 
-## 🎓 Usage Examples
+## Test Coverage
 
-### Example 1: Create a New Page Object
+All tests target [the-internet.herokuapp.com](https://the-internet.herokuapp.com). There are **15 scenarios** across 3 feature files:
+
+### Login (`@login` — 3 scenarios)
+
+- Successful login with valid credentials
+- Login fails with invalid password
+- Login fails with non-existent user
+
+### Checkboxes (`@checkbox` — 3 scenarios)
+
+- Verify checkboxes page displays correct heading
+- Toggle first checkbox on and off
+- Toggle second checkbox off and on
+
+### Add/Remove Elements (`@add_remove` — 9 scenarios)
+
+- Verify page heading
+- Add single and multiple elements
+- Delete elements and verify count changes
+- No delete buttons present initially
+- Add, delete, and add more elements
+- Delete all elements one by one
+- Delete from middle shifts remaining
+
+---
+
+## How It Works
+
+### Self-Healing Element Discovery
+
+When you interact with an element, the framework:
+
+1. **Retrieves all registered locator strategies** for that element
+2. **Sorts strategies by success rate** (higher rate wins; on tie, lower priority number wins)
+3. **Tries each strategy** with up to 3 retries and 500ms delay between retries
+4. **Records success/failure** counts to the strategy for continuous learning
+5. **Persists stats to locators.json** at test teardown for future runs
+
+### Example
+
+```java
+// Traditional (brittle):
+driver.findElement(By.id("login-btn")).click();
+
+// Self-healing:
+element("loginButton").click();
+```
+
+Behind the scenes, the framework tries strategies in success-rate order:
+
+1. `css=button.login-button` (95% success rate)
+2. `css=.radius` (if #1 fails)
+3. `xpath=//button[@type='submit']` (if #2 fails)
+4. `css=.fa-sign-in` (if #3 fails)
+
+---
+
+## Key Files
+
+| File | Purpose |
+| --- | --- |
+| `MCPSeleniumClient.java` | Starts Node.js MCP server as subprocess, sends JSON-RPC requests via stdin, reads responses from stdout. 30s timeout. |
+| `LocatorRegistry.java` | Stores element-to-strategies mappings, tracks success/failure counts, loads/saves to JSON. |
+| `SelfHealingElement.java` | Core healing algorithm: tries strategies by success rate, retries 3x per strategy with 500ms delay. |
+| `HealingMetrics.java` | Aggregates per-element stats, identifies brittle (<80%) and robust (100%) elements, generates reports. |
+| `BasePage.java` | POM base with `element()`, `navigateTo()`, `waitForElementVisible()`, `assertElementVisible()`. Base URL: the-internet.herokuapp.com. |
+
+---
+
+## Adding a New Page
+
+1. **Create a page class** extending `BasePage` with element name constants:
 
 ```java
 public class DashboardPage extends BasePage {
@@ -187,8 +203,8 @@ public class DashboardPage extends BasePage {
     public static final String LOGOUT_BUTTON = "logoutButton";
 
     public DashboardPage(MCPSeleniumClient mcp,
-                        LocatorRegistry registry,
-                        HealingMetrics metrics) {
+                         LocatorRegistry registry,
+                         HealingMetrics metrics) {
         super(mcp, registry, metrics);
     }
 
@@ -216,77 +232,106 @@ public class DashboardPage extends BasePage {
 }
 ```
 
-### Example 2: Write Cucumber Steps
+1. **Create step definitions** with `@Before`/`@After` hooks tagged to your feature.
 
-```java
-@Given("user is on dashboard")
-public void userIsOnDashboard() throws IOException {
-    dashboardPage.verifyPageLoaded();
-}
+1. **Register locators** in the `@Before` hook: create MCPSeleniumClient, start browser, load registry, initialize page, call `initializeLocators()`.
 
-@When("user clicks logout")
-public void userClicksLogout() throws IOException {
-    dashboardPage.clickLogout();
-}
+1. **Write a Gherkin feature** file tagged with your hook tag.
 
-@Then("user should see welcome message {string}")
-public void userShouldSeeWelcomeMessage(String expectedMessage) throws IOException {
-    String actualMessage = dashboardPage.getWelcomeMessage();
-    assertEquals(expectedMessage, actualMessage);
-}
-```
+---
 
-### Example 3: Write Gherkin Feature
+## Running Tests
 
-```gherkin
-Feature: Dashboard Operations
-  As a logged-in user
-  I want to interact with the dashboard
-  So that I can access application features
+```bash
+# Run all tests
+mvn test
 
-  Scenario: View welcome message
-    Given user is on dashboard
-    Then user should see welcome message "Welcome, Test User!"
+# Run a specific feature file
+mvn test -Dcucumber.options="src/test/resources/features/login.feature"
 
-  Scenario: Logout from dashboard
-    Given user is on dashboard
-    When user clicks logout
-    Then user should see login page
+# Run by tag
+mvn test -Dcucumber.options="--tags @smoke"
+
+# Build and generate reports
+mvn verify
+
+# Compile only (no tests)
+mvn clean test-compile
 ```
 
 ---
 
-## 🔧 Configuration
+## Metrics and Reporting
+
+The framework tracks per-element and per-locator statistics. After each test run, call `printHealingReport()` to see:
+
+```text
+=== SELF-HEALING METRICS REPORT ===
+
+OVERALL STATISTICS:
+   Total healing attempts: 45
+   Successful heals: 42
+   Failed heals: 3
+   Overall success rate: 93.3%
+
+ELEMENT-BY-ELEMENT BREAKDOWN:
+
+  loginButton
+   Success Rate: 100.0% (15/15 attempts)
+   Most Reliable Locator: css=button.login-button
+   Locator Performance:
+      css=button.login-button (100.0% - 15/15)
+      css=.radius (0.0% - 0/0)
+
+  usernameInput
+   Success Rate: 86.7% (13/15 attempts)
+   Most Reliable Locator: id=username
+   Locator Performance:
+      id=username (92.3% - 12/13)
+      css=input[name='username'] (50.0% - 1/2)
+
+ROBUST ELEMENTS (100% success):
+   loginButton
+   passwordInput
+
+BRITTLE ELEMENTS (<80% success):
+   errorMessage - 66.7%
+```
+
+---
+
+## Configuration
 
 ### Locator Registry (locators.json)
 
-Define multiple fallback strategies for each element:
+Each element has multiple fallback strategies with priority and tracked success stats:
 
 ```json
 {
   "loginButton": [
     {
-      "strategy": "id",
-      "value": "login-btn",
-      "priority": 1
+      "strategy": "css",
+      "value": "button.login-button",
+      "priority": 1,
+      "successCount": 1,
+      "failureCount": 0,
+      "successRate": 100.0
     },
     {
       "strategy": "css",
-      "value": "button.login-button",
-      "priority": 2
-    },
-    {
-      "strategy": "xpath",
-      "value": "//button[@type='submit']",
-      "priority": 3
+      "value": ".radius",
+      "priority": 2,
+      "successCount": 0,
+      "failureCount": 0,
+      "successRate": 0.0
     }
   ]
 }
 ```
 
-### Browser Configuration
+The registry currently tracks **13 elements** with **41 locator strategies** across all page objects.
 
-Configure browser in your test setup:
+### Browser Configuration
 
 ```java
 // Chrome (default)
@@ -301,171 +346,28 @@ mcp.startBrowser("firefox", false);
 
 ---
 
-## 📊 Metrics and Reporting
+## Troubleshooting
 
-The framework automatically tracks:
+### MCP server fails to start
 
-- **Success/failure rates** per element
-- **Per-locator performance** statistics
-- **Brittle elements** (low success rate)
-- **Robust elements** (100% success rate)
-- **Failure history** for debugging
+Ensure MCP Selenium is installed globally:
 
-### Sample Metrics Report
-
-```
-╔════════════════════════════════════════════════════════════════╗
-║           SELF-HEALING METRICS REPORT                         ║
-╚════════════════════════════════════════════════════════════════╝
-
-📊 OVERALL STATISTICS:
-   Total healing attempts: 45
-   Successful heals: 42
-   Failed heals: 3
-   Overall success rate: 93.3%
-
-📝 ELEMENT-BY-ELEMENT BREAKDOWN:
-───────────────────────────────────────────────────────────────
-
-🔹 loginButton
-   Success Rate: 100.0% (15/15 attempts)
-   Most Reliable Locator: id=login-btn
-   Locator Performance:
-      • id=login-btn (100.0% - 15/15)
-      • css=button.login-button (0.0% - 0/0)
-
-🔹 usernameInput
-   Success Rate: 86.7% (13/15 attempts)
-   Most Reliable Locator: id=username
-   Locator Performance:
-      • id=username (92.3% - 12/13)
-      • css=input[name='username'] (50.0% - 1/2)
-
-🏆 ROBUST ELEMENTS (100% success):
-   ✓ loginButton
-   ✓ passwordInput
-
-⚠️  BRITTLE ELEMENTS (<80% success):
-   ✗ errorMessage - 66.7%
-```
-
----
-
-## 🤝 Integration with AI Tools
-
-### Using with Claude Code
-
-1. Open your feature file
-2. Ask Claude: "Generate step definitions for this feature"
-3. Claude generates the step definitions using the framework
-4. Run tests immediately
-
-### Using with Cline
-
-1. Describe your test scenario
-2. Cline generates Gherkin feature
-3. Cline generates page objects and steps
-4. Framework handles locator management automatically
-
-### Using with Amazon Q
-
-1. Provide test requirements
-2. Amazon Q generates test code
-3. Framework provides self-healing capabilities
-4. Tests run reliably
-
----
-
-## 🧪 Running Tests
-
-### Run all tests
-```bash
-mvn test
-```
-
-### Run specific feature
-```bash
-mvn test -Dcucumber.options="src/test/resources/features/login.feature"
-```
-
-### Run with tags
-```bash
-mvn test -Dcucumber.options="--tags @smoke"
-```
-
-### Generate reports
-```bash
-mvn verify
-```
-
----
-
-## 📈 Best Practices
-
-### 1. Define Multiple Locator Strategies
-
-Always provide 3-4 fallback strategies per element:
-
-```java
-locatorRegistry.addElement("submitButton",
-    new LocatorStrategy("id", "submit", 1),          // Most specific
-    new LocatorStrategy("css", "button.submit", 2),  // Class-based
-    new LocatorStrategy("xpath", "//button[@type='submit']", 3),  // Attribute
-    new LocatorStrategy("linkText", "Submit", 4)     // Text-based
-);
-```
-
-### 2. Use Meaningful Element Names
-
-```java
-// Good
-public static final String LOGIN_BUTTON = "loginButton";
-public static final String ERROR_MESSAGE = "errorMessage";
-
-// Bad
-public static final String BTN1 = "btn1";
-public static final String DIV2 = "div2";
-```
-
-### 3. Review Healing Metrics Regularly
-
-Check your healing reports to identify:
-- Elements that need better locators
-- Locators that consistently fail
-- Pages with stability issues
-
-### 4. Keep Locator Registry Updated
-
-Save the registry after test runs to preserve learning:
-
-```java
-@After
-public void tearDown() throws IOException {
-    locatorRegistry.saveRegistry();  // Saves success/failure stats
-}
-```
-
----
-
-## 🔍 Troubleshooting
-
-### Problem: MCP server fails to start
-
-**Solution**: Ensure MCP Selenium is installed globally:
 ```bash
 npm install -g @executeautomation/mcp-selenium
 ```
 
-### Problem: Elements not found
+### Elements not found
 
-**Solution**: Check locator registry and add more strategies:
+Check locator registry and add more strategies:
+
 ```java
-locatorRegistry.printRegistry();  // Debug output
+locatorRegistry.printRegistry();
 ```
 
-### Problem: Low success rates
+### Low success rates
 
-**Solution**: Review metrics report and update locators:
+Review the metrics report and update locators for brittle elements:
+
 ```java
 healingMetrics.printHealingReport();
 List<String> brittleElements = healingMetrics.getBrittleElements(80.0);
@@ -473,17 +375,26 @@ List<String> brittleElements = healingMetrics.getBrittleElements(80.0);
 
 ---
 
-## 📚 Additional Resources
+## Dependencies
 
-- **MCP Selenium Documentation**: https://github.com/executeautomation/mcp-selenium
-- **Cucumber Documentation**: https://cucumber.io/docs/cucumber/
-- **Selenium Documentation**: https://www.selenium.dev/documentation/
+| Dependency | Version | Purpose |
+| --- | --- | --- |
+| Selenium WebDriver | 4.15.0 | Browser automation |
+| Cucumber (Java + JUnit) | 7.14.0 | BDD framework |
+| Jackson (Databind + Core) | 2.15.3 | JSON processing for locators and JSON-RPC |
+| JUnit 4 | 4.13.2 | Test runner |
 
 ---
 
-## 🤝 Contributing
+## Additional Resources
 
-Contributions are welcome! Please:
+- [MCP Selenium](https://github.com/executeautomation/mcp-selenium) — The MCP server this framework communicates with
+- [Cucumber Documentation](https://cucumber.io/docs/cucumber/) — BDD framework
+- [Selenium Documentation](https://www.selenium.dev/documentation/) — Browser automation
+
+---
+
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -493,29 +404,6 @@ Contributions are welcome! Please:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
-
----
-
-## 🎉 Acknowledgments
-
-- **@executeautomation** for MCP Selenium
-- **Cucumber** team for BDD framework
-- **Selenium** project for browser automation
-
----
-
-## 📞 Support
-
-For issues and questions:
-- Create an issue on GitHub
-- Check existing documentation
-- Review healing metrics for insights
-
----
-
-**Built with ❤️ for the QA Community**
-
-*Empowering testers with AI-driven automation*
